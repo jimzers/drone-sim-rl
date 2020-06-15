@@ -3,4 +3,9 @@ numpy
 opencv-contrib-python
 airsim
 torch
+gym
+stable-baselines3[extra]
+stable-baselines
+pillow
+
 
