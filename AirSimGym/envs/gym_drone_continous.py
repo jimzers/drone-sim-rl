@@ -20,11 +20,14 @@ class DroneEnvContinuous(gym.Env):
         self.collision_penalty = collision_penalty
 
         print('before action space')
-        self.action_space = spaces.Tuple((
-            spaces.Box(low=-x_range_lim, high=x_range_lim, shape=[1]),
-            spaces.Box(low=-y_range_lim, high=y_range_lim, shape=[1]),
-            spaces.Box(low=-z_range_lim, high=z_range_lim, shape=[1])
-        ))
+        # self.action_space = spaces.Tuple((
+        #     spaces.Box(low=-x_range_lim, high=x_range_lim, shape=[1]),
+        #     spaces.Box(low=-y_range_lim, high=y_range_lim, shape=[1]),
+        #     spaces.Box(low=-z_range_lim, high=z_range_lim, shape=[1])
+        # ))
+
+        self.action_space = spaces.Box(low=-x_range_lim, high=x_range_lim, shape=[3])
+
         # todo: normalize observation space
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(img_height, img_width, n_channels), dtype=np.uint8)
@@ -104,8 +107,8 @@ class DroneEnvContinuous(gym.Env):
         # print(action[0][0])
         # print(type(action[0][0]))
         quad_vel = self.client.getMultirotorState().kinematics_estimated.linear_velocity
-        self.client.moveByVelocityAsync(quad_vel.x_val + action[0][0], quad_vel.y_val + action[1][0],
-                                        quad_vel.z_val + action[2][0], self.action_duration).join()
+        self.client.moveByVelocityAsync(quad_vel.x_val + action[0], quad_vel.y_val + action[1],
+                                        quad_vel.z_val + action[2], self.action_duration).join()
         time.sleep(0.5)
 
         quad_state = self.client.getMultirotorState().kinematics_estimated.position
