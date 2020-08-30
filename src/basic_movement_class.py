@@ -5,12 +5,6 @@ from random import randint, choice
 import json
 
 client = airsim.MultirotorClient()
-client.confirmConnection()
-client.enableApiControl(True)
-client.armDisarm(True)
-
-client.takeoffAsync().join()
-
 direction_mod_offset = 0
 
 direction_arr = [(1, 0, 0), (0, 1, 0), (-1, 0, 0), (0, -1, 0)]
@@ -115,11 +109,6 @@ class Drone:
         return move, move_str
 
     def record_pose(self):
-        # print(client.getMultirotorState().kinematics_estimated)
-        # print(client.getMultirotorState().kinematics_estimated.orientation)
-        # print("THIS IS WHAT JSON MYDSFASDFSDA ==========================================================================================")
-        # json_mylist = json.dumps(client.getMultirotorState().kinematics_estimated.orientation, separators=(',', ':'))
-        # print(json_mylist)
         drone_pos = client.getMultirotorState().kinematics_estimated.orientation
         output = " | ".join(["x_val: " + str(drone_pos.x_val), "y_val: " + str(drone_pos.y_val), "z_val: " + str(drone_pos.z_val)])
         print(output)
@@ -146,9 +135,9 @@ class Drone:
 
         return img_rgb
 
-    def move(self):
+    def move(self, output_file, input_file, no_input=False):
 
-        input = open(self.input_file_name, "r")
+        input = open(input_file, "r")
         for command in input:
             cleaned_cmd = command.strip()
             if cleaned_cmd in self.movements:
@@ -164,25 +153,28 @@ class Drone:
                 self.get_np_image(True, "curr_image.png")
                 airsim.time.sleep(1)
         input.close()
-        self.write_log()
-        print("finished")
+        self.write_log(output_file)
+        print("finished episode")
+
+    def clear_logging_arr(self):
+        self.log_arr = []
+
+    def run_multiple(self, num_episodes=5, base_output_name="logs/output_command"):
+        for i in range(num_episodes):
+            client.reset()
+            client.confirmConnection()
+            client.enableApiControl(True)
+            client.armDisarm(True)
+            airsim.time.sleep(1)
+            client.takeoffAsync().join()
+            output_filename = base_output_name + "{:02d}".format(i) + ".txt"
+            self.move(output_filename, self.input_file_name)
+            self.clear_logging_arr()
+
 d = Drone()
-d.move()
-# d.turn_right()
-# d.move_forward()
-# airsim.time.sleep(1)
-# d.turn_left()
-# d.move_forward()
-# airsim.time.sleep(1)
-# d.turn_left()
-# d.move_forward()
-# airsim.time.sleep(1)
-# d.turn_left()
-# d.move_forward()
-# airsim.time.sleep(1)
-# d.turn_left()
-# d.move_forward()
-# airsim.time.sleep(1)
+d.run_multiple()
+# d.move()
+
 
 # exit protocol
 client.armDisarm(False)
