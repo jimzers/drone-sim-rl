@@ -2,6 +2,7 @@ import airsim
 import numpy as np
 import cv2
 from random import randint, choice
+import json
 
 client = airsim.MultirotorClient()
 client.confirmConnection()
@@ -34,8 +35,8 @@ class Drone:
             'backward': self.move_backward,
             'right': self.move_right,
             'left': self.move_left,
-            'up': self.move_up,
-            'down': self.move_down
+            # 'up': self.move_up,
+            # 'down': self.move_down
         }
 
         self.logging = logging
@@ -60,42 +61,43 @@ class Drone:
     def move_left(self):
         self.turn_left()
         self.move_forward()
-        if self.logging:
-            self.log_arr.append("left")
+        # if self.logging:
+        #     self.log_arr.append("left")
 
     def move_right(self):
         self.turn_right()
         self.move_forward()
-        if self.logging:
-            self.log_arr.append("right")
+        # if self.logging:
+        #     self.log_arr.append("right")
 
     def move_up(self):
         client.moveByVelocityAsync(0, 0, 1, 0.3).join()
-        if self.logging:
-            self.log_arr.append("up")
+        # if self.logging:
+        #     self.log_arr.append("up")
 
     def move_down(self):
         client.moveByVelocityAsync(0, 0, -1, 0.3)
-        if self.logging:
-            self.log_arr.append("down")
+        # if self.logging:
+        #     self.log_arr.append("down")
 
     def move_forward(self):
         quad_offset = self.quad_offset_mapping['forward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
                                    self.velocity * quad_offset[2], 0.3).join()
-        if self.logging:
-            self.log_arr.append("forward")
+        # if self.logging:
+        #     self.log_arr.append("forward")
 
     def move_backward(self):
         quad_offset = self.quad_offset_mapping['backward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
                                    self.velocity * quad_offset[2], 0.3).join()
-        if self.logging:
-            self.log_arr.append("backward")
+        # if self.logging:
+        #     self.log_arr.append("backward")
 
-    def write_log(self):
+    def write_log(self, logfile='./src/movement_log.txt'):
+        # TODO: parameterize logfile name
         print('Writing logs...')
-        f = open('./src/movement_log.txt', "w")
+        f = open(logfile, "w")
         for command in self.log_arr:
             f.write(command + "\n")
         print('Writing finished')
@@ -113,8 +115,16 @@ class Drone:
         return move, move_str
 
     def record_pose(self):
-        print(client.getMultirotorState().kinematics_estimated)
-        print(client.getMultirotorState().kinematics_estimated.orientation)
+        # print(client.getMultirotorState().kinematics_estimated)
+        # print(client.getMultirotorState().kinematics_estimated.orientation)
+        # print("THIS IS WHAT JSON MYDSFASDFSDA ==========================================================================================")
+        # json_mylist = json.dumps(client.getMultirotorState().kinematics_estimated.orientation, separators=(',', ':'))
+        # print(json_mylist)
+        drone_pos = client.getMultirotorState().kinematics_estimated.orientation
+        output = " | ".join(["x_val: " + str(drone_pos.x_val), "y_val: " + str(drone_pos.y_val), "z_val: " + str(drone_pos.z_val)])
+        print(output)
+        self.log_arr.append(output)
+        return output
 
 
 
@@ -143,9 +153,14 @@ class Drone:
             cleaned_cmd = command.strip()
             if cleaned_cmd in self.movements:
                 movement, move_str = self.pick_movement(cleaned_cmd)
-                for i in range(0,2):
+                if move_str == 'forward':
+                    for i in range(2):
+                        movement()
+                else:
                     movement()
-                self.record_pose()
+                # for debug purposes
+                self.log_arr.append(move_str)
+                drone_pose = self.record_pose()
                 self.get_np_image(True, "curr_image.png")
                 airsim.time.sleep(1)
         input.close()
