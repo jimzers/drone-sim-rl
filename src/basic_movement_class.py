@@ -12,7 +12,7 @@ direction_arr = [(1, 0, 0), (0, 1, 0), (-1, 0, 0), (0, -1, 0)]
 
 class Drone:
     def __init__(self, logging=True):
-        self.velocity = 5
+        self.velocity = 4
         self.direction_mod_offset = 0
         self.direction_arr = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0)]
         self.input_file_name = ("./src/input_commands.txt")
@@ -47,44 +47,48 @@ class Drone:
     def turn_right(self):
         self.direction_mod_offset += 1
         self.calculate_offset_mapping()
+        direction_num = self.direction_mod_offset % len(self.direction_arr)
+        client.rotateToYawAsync(direction_num * 90).join()
 
     def turn_left(self):
         self.direction_mod_offset -= 1
         self.calculate_offset_mapping()
+        direction_num = self.direction_mod_offset % len(self.direction_arr)
+        client.rotateToYawAsync(direction_num * 90).join()
 
-    def move_left(self):
+    def move_left(self,distance):
         self.turn_left()
-        self.move_forward()
+        self.move_forward(distance)
         # if self.logging:
         #     self.log_arr.append("left")
 
-    def move_right(self):
+    def move_right(self,distance):
         self.turn_right()
-        self.move_forward()
+        self.move_forward(distance)
         # if self.logging:
         #     self.log_arr.append("right")
 
-    def move_up(self):
+    def move_up(self,distance):
         client.moveByVelocityAsync(0, 0, 1, 0.3).join()
         # if self.logging:
         #     self.log_arr.append("up")
 
     def move_down(self):
-        client.moveByVelocityAsync(0, 0, -1, 0.3)
+        client.moveByVelocityAsync(0, 0, -1, 0.3).join()
         # if self.logging:
         #     self.log_arr.append("down")
 
-    def move_forward(self):
+    def move_forward(self, distance):
         quad_offset = self.quad_offset_mapping['forward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
-                                   self.velocity * quad_offset[2], 0.3).join()
+                                   self.velocity * quad_offset[2], distance/self.velocity).join()
         # if self.logging:
         #     self.log_arr.append("forward")
 
-    def move_backward(self):
+    def move_backward(self, distance):
         quad_offset = self.quad_offset_mapping['backward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
-                                   self.velocity * quad_offset[2], 0.3).join()
+                                   self.velocity * quad_offset[2], distance/self.velocity).join()
         # if self.logging:
         #     self.log_arr.append("backward")
 
@@ -109,7 +113,7 @@ class Drone:
         return move, move_str
 
     def record_pose(self):
-        drone_pos = client.getMultirotorState().kinematics_estimated.orientation
+        drone_pos = client.getMultirotorState().kinematics_estimated.position
         output = " | ".join(["x_val: " + str(drone_pos.x_val), "y_val: " + str(drone_pos.y_val), "z_val: " + str(drone_pos.z_val)])
         print(output)
         self.log_arr.append(output)
@@ -142,11 +146,10 @@ class Drone:
             cleaned_cmd = command.strip()
             if cleaned_cmd in self.movements:
                 movement, move_str = self.pick_movement(cleaned_cmd)
-                if move_str == 'forward':
-                    for i in range(2):
-                        movement()
+                if move_str == 'forward' or move_str == 'backward':
+                    movement(2)
                 else:
-                    movement()
+                    movement(1)
                 # for debug purposes
                 self.log_arr.append(move_str)
                 drone_pose = self.record_pose()
@@ -172,7 +175,8 @@ class Drone:
             self.clear_logging_arr()
 
 d = Drone()
-d.run_multiple()
+d.turn_right()
+d.run_multiple(num_episodes=1)
 # d.move()
 
 
