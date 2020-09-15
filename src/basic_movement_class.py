@@ -59,14 +59,12 @@ class Drone:
     def move_left(self,distance):
         self.turn_left()
         self.move_forward(distance)
-        # if self.logging:
-        #     self.log_arr.append("left")
+        # self.log_arr.append("left")
 
     def move_right(self,distance):
         self.turn_right()
         self.move_forward(distance)
-        # if self.logging:
-        #     self.log_arr.append("right")
+        # self.log_arr.append("right")
 
     def move_up(self,distance):
         client.moveByVelocityAsync(0, 0, 1, 0.3).join()
@@ -81,14 +79,14 @@ class Drone:
     def move_forward(self, distance):
         quad_offset = self.quad_offset_mapping['forward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
-                                   self.velocity * quad_offset[2], distance/self.velocity).join()
+                                   0.15, distance/self.velocity).join()
         # if self.logging:
         #     self.log_arr.append("forward")
 
     def move_backward(self, distance):
         quad_offset = self.quad_offset_mapping['backward']
         client.moveByVelocityAsync(self.velocity * quad_offset[0], self.velocity * quad_offset[1],
-                                   self.velocity * quad_offset[2], distance/self.velocity).join()
+                                   0.15, distance/self.velocity).join()
         # if self.logging:
         #     self.log_arr.append("backward")
 
@@ -147,9 +145,9 @@ class Drone:
             if cleaned_cmd in self.movements:
                 movement, move_str = self.pick_movement(cleaned_cmd)
                 if move_str == 'forward' or move_str == 'backward':
-                    movement(2)
+                    movement(4)
                 else:
-                    movement(1)
+                    movement(2)
                 # for debug purposes
                 self.log_arr.append(move_str)
                 drone_pose = self.record_pose()
@@ -175,9 +173,7 @@ class Drone:
             self.clear_logging_arr()
 
 d = Drone()
-d.turn_right()
-d.run_multiple(num_episodes=1)
-# d.move()
+d.run_multiple(num_episodes = 1)
 
 
 # exit protocol
