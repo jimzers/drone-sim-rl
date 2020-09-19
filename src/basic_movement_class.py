@@ -239,6 +239,7 @@ class Drone:
             self.move(output_filename, self.input_file_name)
             self.clear_logging_arr()
 
+#test code for the class
 d = Drone()
 d.run_multiple(num_episodes = 1)
 
